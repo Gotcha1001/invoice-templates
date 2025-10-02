@@ -1,3 +1,5 @@
+// RED RABBIT
+
 // import { v } from "convex/values";
 // import { mutation, query } from "./_generated/server";
 
@@ -32,11 +34,12 @@
 //       userId = await ctx.db.insert("users", userData);
 //       const companyId = await ctx.db.insert("companies", {
 //         name: `${args.firstName || "User"}'s Company`,
-//         address: "",
-//         phone: "",
+//         address: "Default Address",
+//         phone: "123-456-7890",
 //         email: args.email,
 //         userId: args.clerkId,
 //       });
+
 //       await ctx.db.insert("templates", {
 //         name: "Default Template",
 //         description: "Default professional invoice template",
@@ -58,6 +61,7 @@
 //         companyId,
 //       });
 //     }
+
 //     return userId;
 //   },
 // });
@@ -71,7 +75,6 @@
 //       .first();
 //   },
 // });
-
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
@@ -110,6 +113,12 @@ export const upsertUser = mutation({
         phone: "123-456-7890",
         email: args.email,
         userId: args.clerkId,
+        bankingDetails: {
+          bankName: "Default Bank",
+          accountNumber: "00000000",
+          branchCode: "000000",
+          accountHolder: args.firstName || "User",
+        },
       });
 
       await ctx.db.insert("templates", {
