@@ -197,6 +197,7 @@ export default function EditTemplate({
           phone: company.phone,
           email: company.email,
           logoUrl: company.logoUrl,
+          bankingDetails: company.bankingDetails,
         }}
       />
     </div>

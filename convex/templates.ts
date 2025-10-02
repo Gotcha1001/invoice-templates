@@ -1,12 +1,14 @@
+//RED RABBIT ++++++++++++++++++++
+
 // import { v } from "convex/values";
-// import { mutation, query } from "./_generated/server";
-// import { Id } from "./_generated/dataModel";
+// import { mutation, query } from "./\_generated/server";
+// import { Id } from "./\_generated/dataModel";
 // import { TemplateFormData } from "@/types/template";
 
 // // Type for templates table, matching updated schema.ts
 // type TemplateTableData = {
 //   name: string;
-//   description: string; // Non-optional
+//   description: string;
 //   layout: TemplateFormData["layout"];
 //   isDefault: boolean;
 //   companyId: Id<"companies">;
@@ -39,24 +41,15 @@
 //       showWatermark: v.boolean(),
 //     }),
 //     isDefault: v.boolean(),
+//     companyId: v.id("companies"), // Pass companyId from client
 //   },
 //   handler: async (ctx, args) => {
-//     const identity = await ctx.auth.getUserIdentity();
-//     if (!identity) throw new Error("Unauthorized");
-
-//     const userId = identity.subject;
-//     const company = await ctx.db
-//       .query("companies")
-//       .withIndex("by_user", (q) => q.eq("userId", userId))
-//       .first();
-//     if (!company) throw new Error("No company found for user");
-
 //     const templateData: TemplateTableData = {
 //       name: args.name,
-//       description: args.description ?? "", // Ensure non-optional string
+//       description: args.description ?? "",
 //       layout: args.layout,
 //       isDefault: args.isDefault,
-//       companyId: company._id,
+//       companyId: args.companyId,
 //     };
 
 //     const templateId = await ctx.db.insert("templates", templateData);
@@ -65,8 +58,9 @@
 //     if (args.isDefault) {
 //       const existingTemplates = await ctx.db
 //         .query("templates")
-//         .withIndex("by_company", (q) => q.eq("companyId", company._id))
+//         .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
 //         .collect();
+
 //       for (const template of existingTemplates) {
 //         if (template._id !== templateId && template.isDefault) {
 //           await ctx.db.patch(template._id, { isDefault: false });
@@ -79,20 +73,13 @@
 // });
 
 // export const getTemplates = query({
-//   handler: async (ctx) => {
-//     const identity = await ctx.auth.getUserIdentity();
-//     if (!identity) throw new Error("Unauthorized");
-
-//     const userId = identity.subject;
-//     const company = await ctx.db
-//       .query("companies")
-//       .withIndex("by_user", (q) => q.eq("userId", userId))
-//       .first();
-//     if (!company) return [];
-
+//   args: {
+//     companyId: v.id("companies"), // Make companyId required
+//   },
+//   handler: async (ctx, args) => {
 //     return await ctx.db
 //       .query("templates")
-//       .withIndex("by_company", (q) => q.eq("companyId", company._id))
+//       .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
 //       .collect();
 //   },
 // });
@@ -100,17 +87,8 @@
 // export const getTemplate = query({
 //   args: { id: v.id("templates") },
 //   handler: async (ctx, args) => {
-//     const identity = await ctx.auth.getUserIdentity();
-//     if (!identity) throw new Error("Unauthorized");
-//     const userId = identity.subject;
-
 //     const template = await ctx.db.get(args.id);
 //     if (!template) throw new Error("Template not found");
-
-//     const company = await ctx.db.get(template.companyId);
-//     if (!company || company.userId !== userId)
-//       throw new Error("Unauthorized access to template");
-
 //     return template;
 //   },
 // });
@@ -145,19 +123,14 @@
 //       })
 //     ),
 //     isDefault: v.optional(v.boolean()),
+//     companyId: v.id("companies"), // Add companyId for authorization check
 //   },
 //   handler: async (ctx, args) => {
-//     const identity = await ctx.auth.getUserIdentity();
-//     if (!identity) throw new Error("Unauthorized");
-//     const userId = identity.subject;
-
-//     const { id, ...updates } = args;
-
+//     const { id, companyId, ...updates } = args;
 //     const template = await ctx.db.get(id);
-//     if (!template) throw new Error("Template not found");
 
-//     const company = await ctx.db.get(template.companyId);
-//     if (!company || company.userId !== userId)
+//     if (!template) throw new Error("Template not found");
+//     if (template.companyId !== companyId)
 //       throw new Error("Unauthorized access to template");
 
 //     if (updates.isDefault) {
@@ -165,6 +138,7 @@
 //         .query("templates")
 //         .withIndex("by_company", (q) => q.eq("companyId", template.companyId))
 //         .collect();
+
 //       for (const existingTemplate of existingTemplates) {
 //         if (existingTemplate._id !== id && existingTemplate.isDefault) {
 //           await ctx.db.patch(existingTemplate._id, { isDefault: false });
@@ -174,47 +148,32 @@
 
 //     await ctx.db.patch(id, {
 //       ...updates,
-//       description: updates.description ?? template.description, // Ensure non-optional
+//       description: updates.description ?? template.description,
 //     });
 //   },
 // });
 
 // export const deleteTemplate = mutation({
-//   args: { id: v.id("templates") },
+//   args: {
+//     id: v.id("templates"),
+//     companyId: v.id("companies"), // Add for authorization
+//   },
 //   handler: async (ctx, args) => {
-//     const identity = await ctx.auth.getUserIdentity();
-//     if (!identity) throw new Error("Unauthorized");
-//     const userId = identity.subject;
-
 //     const template = await ctx.db.get(args.id);
 //     if (!template) throw new Error("Template not found");
-
-//     const company = await ctx.db.get(template.companyId);
-//     if (!company || company.userId !== userId)
+//     if (template.companyId !== args.companyId)
 //       throw new Error("Unauthorized access to template");
 
 //     await ctx.db.delete(args.id);
 //   },
 // });
-
 import { v } from "convex/values";
-import { mutation, query } from "./\_generated/server";
-import { Id } from "./\_generated/dataModel";
-import { TemplateFormData } from "@/types/template";
-
-// Type for templates table, matching updated schema.ts
-type TemplateTableData = {
-  name: string;
-  description: string;
-  layout: TemplateFormData["layout"];
-  isDefault: boolean;
-  companyId: Id<"companies">;
-};
+import { mutation, query } from "./_generated/server";
 
 export const createTemplate = mutation({
   args: {
     name: v.string(),
-    description: v.optional(v.string()),
+    description: v.string(),
     layout: v.object({
       headerStyle: v.union(
         v.literal("minimal"),
@@ -238,55 +197,26 @@ export const createTemplate = mutation({
       showWatermark: v.boolean(),
     }),
     isDefault: v.boolean(),
-    companyId: v.id("companies"), // Pass companyId from client
+    companyId: v.id("companies"),
   },
   handler: async (ctx, args) => {
-    const templateData: TemplateTableData = {
-      name: args.name,
-      description: args.description ?? "",
-      layout: args.layout,
-      isDefault: args.isDefault,
-      companyId: args.companyId,
-    };
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
 
-    const templateId = await ctx.db.insert("templates", templateData);
+    const userId = identity.subject;
+    const company = await ctx.db.get(args.companyId);
+    if (!company || company.userId !== userId) throw new Error("Unauthorized");
 
-    // If isDefault is true, update other templates to set isDefault to false
-    if (args.isDefault) {
-      const existingTemplates = await ctx.db
-        .query("templates")
-        .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
-        .collect();
-
-      for (const template of existingTemplates) {
-        if (template._id !== templateId && template.isDefault) {
-          await ctx.db.patch(template._id, { isDefault: false });
-        }
-      }
-    }
-
-    return templateId;
-  },
-});
-
-export const getTemplates = query({
-  args: {
-    companyId: v.id("companies"), // Make companyId required
-  },
-  handler: async (ctx, args) => {
-    return await ctx.db
+    const existingTemplates = await ctx.db
       .query("templates")
       .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
       .collect();
-  },
-});
 
-export const getTemplate = query({
-  args: { id: v.id("templates") },
-  handler: async (ctx, args) => {
-    const template = await ctx.db.get(args.id);
-    if (!template) throw new Error("Template not found");
-    return template;
+    if (existingTemplates.length >= 1) {
+      throw new Error("Only one template per company is allowed");
+    }
+
+    return await ctx.db.insert("templates", args);
   },
 });
 
@@ -320,46 +250,85 @@ export const updateTemplate = mutation({
       })
     ),
     isDefault: v.optional(v.boolean()),
-    companyId: v.id("companies"), // Add companyId for authorization check
+    companyId: v.id("companies"),
   },
   handler: async (ctx, args) => {
-    const { id, companyId, ...updates } = args;
-    const template = await ctx.db.get(id);
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
 
-    if (!template) throw new Error("Template not found");
-    if (template.companyId !== companyId)
-      throw new Error("Unauthorized access to template");
-
-    if (updates.isDefault) {
-      const existingTemplates = await ctx.db
-        .query("templates")
-        .withIndex("by_company", (q) => q.eq("companyId", template.companyId))
-        .collect();
-
-      for (const existingTemplate of existingTemplates) {
-        if (existingTemplate._id !== id && existingTemplate.isDefault) {
-          await ctx.db.patch(existingTemplate._id, { isDefault: false });
-        }
-      }
+    const userId = identity.subject;
+    const template = await ctx.db.get(args.id);
+    if (!template || template.companyId !== args.companyId) {
+      throw new Error("Unauthorized or template not found");
     }
 
-    await ctx.db.patch(id, {
-      ...updates,
-      description: updates.description ?? template.description,
-    });
+    const company = await ctx.db.get(args.companyId);
+    if (!company || company.userId !== userId) throw new Error("Unauthorized");
+
+    const { id, companyId, ...updates } = args;
+    await ctx.db.patch(id, updates);
+  },
+});
+
+export const getTemplate = query({
+  args: { id: v.id("templates") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+
+    const userId = identity.subject;
+    const template = await ctx.db.get(args.id);
+    if (!template) return null;
+
+    const company = await ctx.db.get(template.companyId);
+    if (!company || company.userId !== userId) return null;
+
+    return template;
+  },
+});
+
+export const getTemplatesByCompany = query({
+  args: { companyId: v.id("companies") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+
+    const userId = identity.subject;
+    const company = await ctx.db.get(args.companyId);
+    if (!company || company.userId !== userId) return [];
+
+    return await ctx.db
+      .query("templates")
+      .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
+      .collect();
   },
 });
 
 export const deleteTemplate = mutation({
   args: {
     id: v.id("templates"),
-    companyId: v.id("companies"), // Add for authorization
+    companyId: v.id("companies"),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    const userId = identity.subject;
     const template = await ctx.db.get(args.id);
-    if (!template) throw new Error("Template not found");
-    if (template.companyId !== args.companyId)
-      throw new Error("Unauthorized access to template");
+    if (!template || template.companyId !== args.companyId) {
+      throw new Error("Unauthorized or template not found");
+    }
+
+    const company = await ctx.db.get(args.companyId);
+    if (!company || company.userId !== userId) throw new Error("Unauthorized");
+
+    const invoicesUsingTemplate = await ctx.db
+      .query("invoices")
+      .filter((q) => q.eq(q.field("templateId"), args.id))
+      .first();
+    if (invoicesUsingTemplate) {
+      throw new Error("Cannot delete template used by invoices");
+    }
 
     await ctx.db.delete(args.id);
   },

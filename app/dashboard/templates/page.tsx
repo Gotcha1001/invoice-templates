@@ -39,7 +39,7 @@ export default function TemplatesList() {
 
   // Then get templates using companyId
   const templates = useQuery(
-    api.templates.getTemplates,
+    api.templates.getTemplatesByCompany,
     company?._id ? { companyId: company._id } : "skip"
   );
 
@@ -100,7 +100,7 @@ export default function TemplatesList() {
         </Link>
       </div>
 
-      {templates.length === 0 ? (
+      {templates?.length === 0 ? (
         <Card>
           <CardContent className="py-12">
             <div className="text-center">
@@ -135,7 +135,7 @@ export default function TemplatesList() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {templates.map((template) => (
+                {templates?.map((template) => (
                   <TableRow key={template._id}>
                     <TableCell className="font-medium">
                       {template.name}
