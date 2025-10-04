@@ -5,7 +5,8 @@ import { ConvexClientProvider } from "./ConvexClientProvider";
 import { ClerkProvider } from "@clerk/nextjs";
 import Navbar from "@/components/common/Navbar";
 import { dark } from "@clerk/themes";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner"; // Change this import to use the custom Sonner component
+import { ThemeProvider } from "next-themes";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,9 +35,16 @@ export default function RootLayout({
       >
         <ClerkProvider appearance={{ baseTheme: dark }}>
           <ConvexClientProvider>
-            <Navbar />
-            <main>{children}</main>
-            <Toaster richColors />
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="dark"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <Navbar />
+              <main>{children}</main>
+              <Toaster richColors />
+            </ThemeProvider>
           </ConvexClientProvider>
         </ClerkProvider>
       </body>
