@@ -535,15 +535,15 @@ export default function InvoiceCreationForm() {
                 <div className="w-80 space-y-2">
                   <div className="flex justify-between">
                     <span>Subtotal:</span>
-                    <span>${subtotal.toFixed(2)}</span>
+                    <span>R{subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Tax ({invoiceDetails.tax}%):</span>
-                    <span>${taxAmount.toFixed(2)}</span>
+                    <span>R{taxAmount.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-lg font-semibold border-t pt-2">
                     <span>Total:</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>R{total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>

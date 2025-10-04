@@ -153,11 +153,16 @@ export const updateCompany = mutation({
 });
 
 export const getCompaniesByUser = query({
-  args: { userId: v.string() },
+  args: { userId: v.optional(v.string()) },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    const userId = args.userId || identity.subject;
+
     return await ctx.db
       .query("companies")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
   },
 });

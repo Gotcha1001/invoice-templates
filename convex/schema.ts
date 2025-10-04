@@ -176,6 +176,7 @@ export default defineSchema({
     ),
     templateId: v.id("templates"),
     notes: v.optional(v.string()),
+    currency: v.string(), // Added currency field
   })
     .index("by_company", ["companyId"])
     .index("by_status", ["status"])
