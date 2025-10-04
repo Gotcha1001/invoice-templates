@@ -23,7 +23,6 @@
 // export type TemplateFormData = z.infer<typeof templateSchema>;
 
 import { z } from "zod";
-
 export const templateSchema = z.object({
   name: z.string().min(1, "Template name is required"),
   description: z.string().optional(),
@@ -68,5 +67,5 @@ export const templateSchema = z.object({
   }),
   isDefault: z.boolean(),
 });
-
 export type TemplateFormData = z.infer<typeof templateSchema>;
+export type TemplateLayout = TemplateFormData["layout"];
