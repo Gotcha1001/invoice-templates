@@ -97,7 +97,7 @@ export default function CreateTemplate() {
 
   if (templates && templates.length > 0) {
     return (
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-6 mt-10">
         <Card>
           <CardContent className="pt-6">
             <p className="text-center mb-4">

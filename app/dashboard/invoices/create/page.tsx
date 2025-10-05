@@ -1265,7 +1265,15 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, Upload, Save, Eye, FileText } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Upload,
+  Save,
+  Eye,
+  FileText,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -1324,7 +1332,7 @@ interface FormData {
     templateId: Id<"templates">;
     currency: string;
   };
-  logoFile?: File | null; // Not managed by RHF
+  logoFile?: File | null;
 }
 
 export default function InvoiceCreationForm() {
@@ -1377,13 +1385,11 @@ export default function InvoiceCreationForm() {
   const [logoPreview, setLogoPreview] = useState<string>("");
   const [showPreview, setShowPreview] = useState(false);
 
-  // Fetch companies first
   const companies = useQuery(
     api.companies.getCompaniesByUser,
     user ? {} : "skip"
   );
 
-  // Fetch templates only if a company is selected
   const selectedCompany = companies?.find(
     (c: Doc<"companies">) => c.name === watchedValues.company.name
   );
@@ -1394,7 +1400,6 @@ export default function InvoiceCreationForm() {
 
   const createInvoice = useMutation(api.invoices.createInvoice);
 
-  // Auto-save draft
   useEffect(() => {
     const timer = setTimeout(() => {
       localStorage.setItem("invoice-draft", JSON.stringify(watchedValues));
@@ -1402,7 +1407,6 @@ export default function InvoiceCreationForm() {
     return () => clearTimeout(timer);
   }, [watchedValues]);
 
-  // Load draft on mount
   useEffect(() => {
     const draft = localStorage.getItem("invoice-draft");
     if (draft) {
@@ -1414,7 +1418,6 @@ export default function InvoiceCreationForm() {
     }
   }, [reset]);
 
-  // Auto-select default template and company
   useEffect(() => {
     if (companies && companies.length > 0 && !watchedValues.company.name) {
       const defaultCompany = companies[0];
@@ -1442,7 +1445,6 @@ export default function InvoiceCreationForm() {
     }
   }, [templates, setValue, watchedValues.invoiceDetails.templateId]);
 
-  // Calculate totals
   const subtotal = watchedValues.items.reduce(
     (sum, item) => sum + item.quantity * item.price,
     0
@@ -1573,9 +1575,15 @@ export default function InvoiceCreationForm() {
 
   if (!user || companies === undefined) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <FileText size={48} className="mx-auto text-gray-400 mb-4" />
-        <p>Loading...</p>
+      <div className="flex flex-col justify-center items-center h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <FileText size={64} className="mx-auto text-indigo-500 mb-4" />
+          <p className="text-slate-600 text-lg font-medium">Loading...</p>
+        </motion.div>
       </div>
     );
   }
@@ -1635,45 +1643,115 @@ export default function InvoiceCreationForm() {
   ];
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="max-w-6xl mx-auto p-6 space-y-8 mt-20">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/20 mt-24"
+    >
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8 pt-24 pb-16">
+        {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex justify-between items-center"
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8"
         >
-          <h1 className="text-3xl font-bold">Create Invoice</h1>
-          <div className="flex gap-3">
+          <div className="relative">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+            >
+              <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Create Invoice
+              </h1>
+              <p className="text-slate-500 mt-2 text-sm sm:text-base">
+                Build professional invoices in seconds
+              </p>
+            </motion.div>
+            <motion.div
+              className="absolute -top-6 -right-6 text-yellow-400"
+              animate={{
+                rotate: [0, 10, -10, 10, 0],
+                scale: [1, 1.1, 1, 1.1, 1],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                repeatDelay: 3,
+              }}
+            >
+              <Sparkles size={24} />
+            </motion.div>
+          </div>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="flex gap-3"
+          >
             <Button
               type="button"
               variant="outline"
-              className="flex items-center gap-2"
+              className="group relative overflow-hidden border-2 border-slate-200 hover:border-indigo-300 transition-all duration-300 shadow-sm hover:shadow-md"
               onClick={() => setShowPreview(!showPreview)}
             >
-              <Eye size={16} />
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10"
+                initial={{ x: "-100%" }}
+                whileHover={{ x: "100%" }}
+                transition={{ duration: 0.5 }}
+              />
+              <Eye
+                size={16}
+                className="mr-2 group-hover:scale-110 transition-transform"
+              />
               {showPreview ? "Hide Preview" : "Show Preview"}
             </Button>
-            <Button type="submit" className="flex items-center gap-2">
-              <Save size={16} />
+            <Button
+              type="submit"
+              className="group relative overflow-hidden bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent"
+                initial={{ x: "-100%" }}
+                whileHover={{ x: "100%" }}
+                transition={{ duration: 0.5 }}
+              />
+              <Save
+                size={16}
+                className="mr-2 group-hover:scale-110 transition-transform"
+              />
               Save Invoice
             </Button>
-          </div>
+          </motion.div>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Company Information */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
+            transition={{
+              delay: 0.15,
+              duration: 0.6,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+            whileHover={{ y: -4 }}
+            className="transition-all duration-300"
           >
-            <Card>
-              <CardHeader>
-                <CardTitle>Company Information</CardTitle>
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-indigo-50/30 relative">
+                <CardTitle className="text-xl font-semibold text-slate-800 flex items-center gap-2">
+                  <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full" />
+                  Company Information
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Company</Label>
+              <CardContent className="space-y-5 pt-6 relative">
+                <motion.div whileTap={{ scale: 0.98 }}>
+                  <Label className="mb-2 text-sm font-medium text-slate-700">
+                    Company
+                  </Label>
                   <Select
                     value={watchedValues.company.name}
                     onValueChange={(value) => {
@@ -1693,33 +1771,45 @@ export default function InvoiceCreationForm() {
                       }
                     }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="border-slate-200 focus:ring-2 focus:ring-indigo-500/20 hover:border-indigo-300 transition-all duration-200">
                       <SelectValue placeholder="Select a company" />
                     </SelectTrigger>
                     <SelectContent>
                       {companies?.map((c: Doc<"companies">) => (
-                        <SelectItem key={c._id} value={c.name}>
+                        <SelectItem
+                          key={c._id}
+                          value={c.name}
+                          className="hover:bg-indigo-50 transition-colors"
+                        >
                           {c.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </motion.div>
+
                 <div>
-                  <Label>Company Logo</Label>
+                  <Label className="mb-2 text-sm font-medium text-slate-700">
+                    Company Logo
+                  </Label>
                   <div className="mt-2">
                     <div className="flex items-center gap-4">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="flex items-center gap-2"
-                        onClick={() =>
-                          document.getElementById("logo-upload")?.click()
-                        }
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                       >
-                        <Upload size={16} />
-                        Upload Logo
-                      </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="border-2 border-dashed border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/50 transition-all duration-200"
+                          onClick={() =>
+                            document.getElementById("logo-upload")?.click()
+                          }
+                        >
+                          <Upload size={16} className="mr-2" />
+                          Upload Logo
+                        </Button>
+                      </motion.div>
                       <input
                         id="logo-upload"
                         type="file"
@@ -1727,101 +1817,176 @@ export default function InvoiceCreationForm() {
                         onChange={handleLogoUpload}
                         className="hidden"
                       />
-                      {logoPreview && (
-                        <img
-                          src={logoPreview}
-                          alt="Logo preview"
-                          className="h-12 w-12 object-contain"
-                        />
-                      )}
+                      <AnimatePresence>
+                        {logoPreview && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            className="relative group/logo"
+                          >
+                            <img
+                              src={logoPreview}
+                              alt="Logo preview"
+                              className="h-16 w-16 object-contain rounded-lg border-2 border-slate-200 p-1 bg-white shadow-md group-hover/logo:shadow-lg transition-all duration-200"
+                            />
+                            <div className="absolute inset-0 bg-indigo-500/10 rounded-lg opacity-0 group-hover/logo:opacity-100 transition-opacity" />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </div>
                 </div>
-                <div>
-                  <Label htmlFor="company-address">Address</Label>
+
+                <motion.div whileTap={{ scale: 0.98 }}>
+                  <Label
+                    htmlFor="company-address"
+                    className="mb-2 text-sm font-medium text-slate-700"
+                  >
+                    Address
+                  </Label>
                   <Textarea
                     id="company-address"
                     placeholder="Company Address"
                     rows={3}
+                    className="border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 hover:border-slate-300 transition-all duration-200 resize-none"
                     {...register("company.address")}
                   />
-                </div>
+                </motion.div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="company-phone">Phone</Label>
+                  <motion.div whileTap={{ scale: 0.98 }}>
+                    <Label
+                      htmlFor="company-phone"
+                      className="mb-2 text-sm font-medium text-slate-700"
+                    >
+                      Phone
+                    </Label>
                     <Input
                       id="company-phone"
                       placeholder="Phone Number"
+                      className="border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 hover:border-slate-300 transition-all duration-200"
                       {...register("company.phone")}
                     />
-                  </div>
-                  <div>
-                    <Label htmlFor="company-email">Email</Label>
+                  </motion.div>
+                  <motion.div whileTap={{ scale: 0.98 }}>
+                    <Label
+                      htmlFor="company-email"
+                      className="mb-2 text-sm font-medium text-slate-700"
+                    >
+                      Email
+                    </Label>
                     <Input
                       id="company-email"
                       type="email"
                       placeholder="email@company.com"
+                      className="border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 hover:border-slate-300 transition-all duration-200"
                       {...register("company.email")}
                     />
-                  </div>
+                  </motion.div>
                 </div>
-                <div>
-                  <Label htmlFor="company-website">Website (Optional)</Label>
+
+                <motion.div whileTap={{ scale: 0.98 }}>
+                  <Label
+                    htmlFor="company-website"
+                    className="mb-2 text-sm font-medium text-slate-700"
+                  >
+                    Website{" "}
+                    <span className="text-slate-400 text-xs">(Optional)</span>
+                  </Label>
                   <Input
                     id="company-website"
                     placeholder="www.company.com"
+                    className="border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 hover:border-slate-300 transition-all duration-200"
                     {...register("company.website")}
                   />
-                </div>
+                </motion.div>
               </CardContent>
             </Card>
           </motion.div>
 
           {/* Customer Information */}
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{
+              delay: 0.25,
+              duration: 0.6,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+            whileHover={{ y: -4 }}
+            className="transition-all duration-300"
           >
-            <Card>
-              <CardHeader>
-                <CardTitle>Customer Information</CardTitle>
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-purple-50/30 relative">
+                <CardTitle className="text-xl font-semibold text-slate-800 flex items-center gap-2">
+                  <div className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full" />
+                  Customer Information
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="customer-name">Customer Name</Label>
+              <CardContent className="space-y-5 pt-6 relative">
+                <motion.div whileTap={{ scale: 0.98 }}>
+                  <Label
+                    htmlFor="customer-name"
+                    className="mb-2 text-sm font-medium text-slate-700"
+                  >
+                    Customer Name
+                  </Label>
                   <Input
                     id="customer-name"
                     placeholder="Customer Name"
+                    className="border-slate-200 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 hover:border-slate-300 transition-all duration-200"
                     {...register("customer.name")}
                   />
-                </div>
-                <div>
-                  <Label htmlFor="customer-email">Email</Label>
+                </motion.div>
+
+                <motion.div whileTap={{ scale: 0.98 }}>
+                  <Label
+                    htmlFor="customer-email"
+                    className="mb-2 text-sm font-medium text-slate-700"
+                  >
+                    Email
+                  </Label>
                   <Input
                     id="customer-email"
                     type="email"
                     placeholder="customer@email.com"
+                    className="border-slate-200 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 hover:border-slate-300 transition-all duration-200"
                     {...register("customer.email")}
                   />
-                </div>
-                <div>
-                  <Label htmlFor="customer-address">Address</Label>
+                </motion.div>
+
+                <motion.div whileTap={{ scale: 0.98 }}>
+                  <Label
+                    htmlFor="customer-address"
+                    className="mb-2 text-sm font-medium text-slate-700"
+                  >
+                    Address
+                  </Label>
                   <Textarea
                     id="customer-address"
                     placeholder="Customer Address"
                     rows={3}
+                    className="border-slate-200 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 hover:border-slate-300 transition-all duration-200 resize-none"
                     {...register("customer.address")}
                   />
-                </div>
-                <div>
-                  <Label htmlFor="customer-phone">Phone</Label>
+                </motion.div>
+
+                <motion.div whileTap={{ scale: 0.98 }}>
+                  <Label
+                    htmlFor="customer-phone"
+                    className="mb-2 text-sm font-medium text-slate-700"
+                  >
+                    Phone
+                  </Label>
                   <Input
                     id="customer-phone"
                     placeholder="Phone Number"
+                    className="border-slate-200 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 hover:border-slate-300 transition-all duration-200"
                     {...register("customer.phone")}
                   />
-                </div>
+                </motion.div>
               </CardContent>
             </Card>
           </motion.div>
@@ -1829,92 +1994,148 @@ export default function InvoiceCreationForm() {
 
         {/* Invoice Details */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.35, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          whileHover={{ y: -4 }}
+          className="transition-all duration-300"
         >
-          <Card>
-            <CardHeader>
-              <CardTitle>Invoice Details</CardTitle>
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-blue-50/30 relative">
+              <CardTitle className="text-xl font-semibold text-slate-800 flex items-center gap-2">
+                <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full" />
+                Invoice Details
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-                <div>
-                  <Label htmlFor="invoice-number">Invoice Number</Label>
+            <CardContent className="pt-6 relative">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+                <motion.div whileTap={{ scale: 0.98 }}>
+                  <Label
+                    htmlFor="invoice-number"
+                    className="mb-2 text-sm font-medium text-slate-700"
+                  >
+                    Invoice Number
+                  </Label>
                   <Input
                     id="invoice-number"
+                    className="border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 hover:border-slate-300 transition-all duration-200 font-mono"
                     {...register("invoiceDetails.invoiceNumber")}
                   />
-                </div>
-                <div>
-                  <Label htmlFor="issue-date">Issue Date</Label>
+                </motion.div>
+
+                <motion.div whileTap={{ scale: 0.98 }}>
+                  <Label
+                    htmlFor="issue-date"
+                    className="mb-2 text-sm font-medium text-slate-700"
+                  >
+                    Issue Date
+                  </Label>
                   <Input
                     id="issue-date"
                     type="date"
+                    className="border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 hover:border-slate-300 transition-all duration-200"
                     {...register("invoiceDetails.issueDate")}
                   />
-                </div>
-                <div>
-                  <Label htmlFor="due-date">Due Date</Label>
+                </motion.div>
+
+                <motion.div whileTap={{ scale: 0.98 }}>
+                  <Label
+                    htmlFor="due-date"
+                    className="mb-2 text-sm font-medium text-slate-700"
+                  >
+                    Due Date
+                  </Label>
                   <Input
                     id="due-date"
                     type="date"
+                    className="border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 hover:border-slate-300 transition-all duration-200"
                     {...register("invoiceDetails.dueDate")}
                   />
-                </div>
-                <div>
-                  <Label htmlFor="tax">Tax Rate (%)</Label>
+                </motion.div>
+
+                <motion.div whileTap={{ scale: 0.98 }}>
+                  <Label
+                    htmlFor="tax"
+                    className="mb-2 text-sm font-medium text-slate-700"
+                  >
+                    Tax Rate (%)
+                  </Label>
                   <Input
                     id="tax"
                     type="number"
                     min="0"
                     step="0.1"
+                    className="border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 hover:border-slate-300 transition-all duration-200"
                     {...register("invoiceDetails.tax", { valueAsNumber: true })}
                   />
-                </div>
-                <div>
-                  <Label>Currency</Label>
+                </motion.div>
+
+                <motion.div whileTap={{ scale: 0.98 }}>
+                  <Label className="mb-2 text-sm font-medium text-slate-700">
+                    Currency
+                  </Label>
                   <Select
                     value={watchedValues.invoiceDetails.currency}
                     onValueChange={(value) =>
                       setValue("invoiceDetails.currency", value)
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="border-slate-200 focus:ring-2 focus:ring-blue-500/20 hover:border-blue-300 transition-all duration-200">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {currencies.map((curr) => (
-                        <SelectItem key={curr.code} value={curr.code}>
+                        <SelectItem
+                          key={curr.code}
+                          value={curr.code}
+                          className="hover:bg-blue-50 transition-colors"
+                        >
                           {curr.symbol} {curr.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </motion.div>
               </div>
-              <div className="flex gap-2 mb-4">
-                {datePresets.map((preset) => (
-                  <Button
-                    type="button"
+
+              <div className="flex flex-wrap gap-2 mb-6">
+                {datePresets.map((preset, index) => (
+                  <motion.div
                     key={preset.label}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const date = new Date();
-                      date.setDate(date.getDate() + preset.days);
-                      setValue(
-                        "invoiceDetails.dueDate",
-                        date.toISOString().split("T")[0]
-                      );
-                    }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.4 + index * 0.05 }}
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    {preset.label}
-                  </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="border-slate-200 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all duration-200 shadow-sm hover:shadow-md"
+                      onClick={() => {
+                        const date = new Date();
+                        date.setDate(date.getDate() + preset.days);
+                        setValue(
+                          "invoiceDetails.dueDate",
+                          date.toISOString().split("T")[0]
+                        );
+                      }}
+                    >
+                      {preset.label}
+                    </Button>
+                  </motion.div>
                 ))}
               </div>
-              <div>
-                <Label htmlFor="template">Template</Label>
+
+              <motion.div whileTap={{ scale: 0.98 }}>
+                <Label
+                  htmlFor="template"
+                  className="mb-2 text-sm font-medium text-slate-700"
+                >
+                  Template
+                </Label>
                 <Select
                   value={watchedValues.invoiceDetails.templateId}
                   onValueChange={(value) =>
@@ -1924,93 +2145,127 @@ export default function InvoiceCreationForm() {
                     )
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="border-slate-200 focus:ring-2 focus:ring-blue-500/20 hover:border-blue-300 transition-all duration-200">
                     <SelectValue placeholder="Select a template" />
                   </SelectTrigger>
                   <SelectContent>
                     {templates?.map((t: Doc<"templates">) => (
-                      <SelectItem key={t._id} value={t._id}>
+                      <SelectItem
+                        key={t._id}
+                        value={t._id}
+                        className="hover:bg-blue-50 transition-colors"
+                      >
                         {t.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
+              </motion.div>
 
               {/* Items */}
-              <div className="space-y-4 mt-6">
+              <div className="space-y-6 mt-8">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold">Items</h3>
-                  <Button
-                    type="button"
-                    onClick={addItem}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2"
+                  <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                    <div className="w-1 h-5 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full" />
+                    Invoice Items
+                  </h3>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    <Plus size={16} />
-                    Add Item
-                  </Button>
+                    <Button
+                      type="button"
+                      onClick={addItem}
+                      variant="outline"
+                      size="sm"
+                      className="border-2 border-emerald-200 hover:border-emerald-400 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 transition-all duration-200 shadow-sm hover:shadow-md"
+                    >
+                      <Plus size={16} className="mr-1" />
+                      Add Item
+                    </Button>
+                  </motion.div>
                 </div>
 
                 <div className="space-y-3">
-                  <AnimatePresence>
+                  <AnimatePresence mode="popLayout">
                     {fields.map((item, index) => (
                       <motion.div
                         key={item.id}
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="grid grid-cols-12 gap-3 items-center p-4 border rounded-lg"
+                        initial={{ opacity: 0, height: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, height: "auto", scale: 1 }}
+                        exit={{ opacity: 0, height: 0, scale: 0.8 }}
+                        transition={{
+                          duration: 0.3,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
+                        whileHover={{ scale: 1.01, y: -2 }}
+                        className="grid grid-cols-12 gap-3 items-center p-5 border-2 border-slate-200 rounded-xl bg-gradient-to-br from-white to-slate-50/50 hover:border-emerald-300 hover:shadow-lg transition-all duration-300 group/item"
                       >
-                        <div className="col-span-5">
+                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-teal-500/5 opacity-0 group-hover/item:opacity-100 rounded-xl transition-opacity duration-300" />
+
+                        <div className="col-span-12 sm:col-span-5 relative">
                           <Input
                             placeholder="Item description"
+                            className="border-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 hover:border-slate-300 transition-all duration-200"
                             {...register(`items.${index}.description`)}
                           />
                         </div>
-                        <div className="col-span-2">
+
+                        <div className="col-span-4 sm:col-span-2 relative">
                           <Input
                             type="number"
                             placeholder="Qty"
                             min="1"
+                            className="border-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 hover:border-slate-300 transition-all duration-200"
                             {...register(`items.${index}.quantity`, {
                               valueAsNumber: true,
                             })}
                           />
                         </div>
-                        <div className="col-span-2">
+
+                        <div className="col-span-4 sm:col-span-2 relative">
                           <Input
                             type="number"
                             placeholder="Price"
                             min="0"
                             step="0.01"
+                            className="border-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 hover:border-slate-300 transition-all duration-200"
                             {...register(`items.${index}.price`, {
                               valueAsNumber: true,
                             })}
                           />
                         </div>
-                        <div className="col-span-2">
+
+                        <div className="col-span-3 sm:col-span-2 relative">
                           <Input
                             value={formatCurrency(
                               watchedValues.items[index]?.quantity *
                                 watchedValues.items[index]?.price || 0
                             )}
                             readOnly
-                            className="bg-gray-50"
+                            className="bg-gradient-to-br from-slate-50 to-emerald-50/30 border-slate-200 font-semibold text-slate-700"
                           />
                         </div>
-                        <div className="col-span-1 flex justify-end">
+
+                        <div className="col-span-1 flex justify-end relative">
                           {fields.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              onClick={() => remove(index)}
-                              className="h-8 w-8"
+                            <motion.div
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
                             >
-                              <Trash2 size={14} />
-                            </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={() => remove(index)}
+                                className="h-9 w-9 border-2 border-rose-200 hover:border-rose-400 hover:bg-rose-50 transition-all duration-200 group/delete"
+                              >
+                                <Trash2
+                                  size={14}
+                                  className="text-rose-500 group-hover/delete:scale-110 transition-transform"
+                                />
+                              </Button>
+                            </motion.div>
                           )}
                         </div>
                       </motion.div>
@@ -2019,58 +2274,112 @@ export default function InvoiceCreationForm() {
                 </div>
 
                 {/* Totals */}
-                <div className="flex justify-end">
-                  <div className="w-80 space-y-2">
-                    <div className="flex justify-between">
-                      <span>Subtotal:</span>
-                      <span>{formatCurrency(subtotal)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Tax ({watchedValues.invoiceDetails.tax}%):</span>
-                      <span>{formatCurrency(taxAmount)}</span>
-                    </div>
-                    <div className="flex justify-between text-lg font-semibold border-t pt-2">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="flex justify-end mt-6"
+                >
+                  <div className="w-full sm:w-96 space-y-3 p-6 rounded-xl bg-gradient-to-br from-slate-50 to-indigo-50/30 border-2 border-slate-200 shadow-lg">
+                    <motion.div
+                      className="flex justify-between items-center text-slate-600"
+                      whileHover={{ x: 4 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <span className="font-medium">Subtotal:</span>
+                      <span className="font-semibold">
+                        {formatCurrency(subtotal)}
+                      </span>
+                    </motion.div>
+
+                    <motion.div
+                      className="flex justify-between items-center text-slate-600"
+                      whileHover={{ x: 4 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <span className="font-medium">
+                        Tax ({watchedValues.invoiceDetails.tax}%):
+                      </span>
+                      <span className="font-semibold">
+                        {formatCurrency(taxAmount)}
+                      </span>
+                    </motion.div>
+
+                    <div className="h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
+
+                    <motion.div
+                      className="flex justify-between items-center text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent pt-2"
+                      whileHover={{ scale: 1.02 }}
+                      transition={{ duration: 0.2 }}
+                    >
                       <span>Total:</span>
                       <span>{formatCurrency(total)}</span>
-                    </div>
+                    </motion.div>
                   </div>
-                </div>
+                </motion.div>
 
-                <div>
-                  <Label htmlFor="notes">Notes (Optional)</Label>
+                <motion.div whileTap={{ scale: 0.98 }}>
+                  <Label
+                    htmlFor="notes"
+                    className="mb-2 text-sm font-medium text-slate-700"
+                  >
+                    Notes{" "}
+                    <span className="text-slate-400 text-xs">(Optional)</span>
+                  </Label>
                   <Textarea
                     id="notes"
                     placeholder="Additional notes or payment terms"
-                    rows={3}
+                    rows={4}
+                    className="border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 hover:border-slate-300 transition-all duration-200 resize-none"
                     {...register("invoiceDetails.notes")}
                   />
-                </div>
+                </motion.div>
               </div>
             </CardContent>
           </Card>
         </motion.div>
 
         {/* Preview */}
-        {showPreview && selectedTemplate && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>Invoice Preview</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <InvoicePreview
-                  invoice={previewInvoice}
-                  template={selectedTemplate}
-                  company={previewCompany}
-                />
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
+        <AnimatePresence>
+          {showPreview && selectedTemplate && (
+            <motion.div
+              initial={{ opacity: 0, y: 30, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -30, scale: 0.95 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <Card className="border-0 shadow-2xl bg-white/90 backdrop-blur-md overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-purple-500/5 to-pink-500/5" />
+                <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50 via-indigo-50/30 to-purple-50/30 relative">
+                  <CardTitle className="text-xl font-semibold text-slate-800 flex items-center gap-2">
+                    <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500 rounded-full" />
+                    Invoice Preview
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                      className="ml-auto"
+                    >
+                      <Eye size={20} className="text-indigo-500" />
+                    </motion.div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-8 relative">
+                  <div className="bg-white rounded-lg shadow-inner p-4">
+                    <InvoicePreview
+                      invoice={previewInvoice}
+                      template={selectedTemplate}
+                      company={previewCompany}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </form>
   );
