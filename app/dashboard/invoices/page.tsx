@@ -569,10 +569,11 @@
 //     </div>
 //   );
 // }
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar,
   FileText,
@@ -584,6 +585,10 @@ import {
   Trash2,
   Download,
   Plus,
+  DollarSign,
+  AlertCircle,
+  CheckCircle,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -617,17 +622,17 @@ import { formatCurrency } from "@/lib/currency";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { StatusBadge } from "@/components/invoice/StatusBadge";
 import { InvoiceAnalytics } from "@/components/invoice/InvoiceAnalytics";
+import { Label } from "@/components/ui/label";
 
-// Suggestion 1: Animation variants
 const tableVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.05,
+      staggerChildren: 0.03,
     },
   },
-} as const;
+};
 
 const rowVariants = {
   hidden: { opacity: 0, x: -20 },
@@ -635,18 +640,12 @@ const rowVariants = {
     opacity: 1,
     x: 0,
     transition: {
-      type: "spring",
+      type: "spring" as const,
       stiffness: 100,
     },
   },
-  hover: {
-    scale: 1.01,
-    backgroundColor: "rgba(0,0,0,0.02)",
-    transition: { duration: 0.2 },
-  },
-} as const;
+};
 
-// Custom hook for templates (existing)
 function useTemplatesByCompanyIds(companyIds: Id<"companies">[]) {
   const templateResults = useQuery(
     api.templates.getTemplatesByCompanies,
@@ -678,16 +677,15 @@ export default function MonthlyInvoicesDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(
     new Set()
-  ); // Suggestion 4: Bulk actions
+  );
   const [filters, setFilters] = useState({
-    // Suggestion 7: Enhanced filters
     minAmount: 0,
     maxAmount: Infinity,
     dateRange: { start: "", end: "" },
   });
-  const [downloadProgress, setDownloadProgress] = useState(0); // Suggestion 12: Progress
+  const [downloadProgress, setDownloadProgress] = useState(0);
 
-  const debouncedSearch = useDebouncedValue(searchTerm, 300); // Suggestion 7
+  const debouncedSearch = useDebouncedValue(searchTerm, 300);
 
   const invoices = useQuery(api.invoices.getInvoicesByUser, user ? {} : "skip");
   const companies = useQuery(
@@ -701,7 +699,7 @@ export default function MonthlyInvoicesDashboard() {
   const templatesByCompany = useTemplatesByCompanyIds(companyIds);
   const deleteInvoice = useMutation(api.invoices.deleteInvoice);
   const updateInvoice = useMutation(api.invoices.updateInvoice);
-  const createInvoice = useMutation(api.invoices.createInvoice); // For duplication
+  const createInvoice = useMutation(api.invoices.createInvoice);
 
   const filteredInvoices = useMemo(() => {
     if (!invoices) return [];
@@ -723,7 +721,6 @@ export default function MonthlyInvoicesDashboard() {
       const matchesAmount =
         invoice.total >= filters.minAmount &&
         invoice.total <= filters.maxAmount;
-      // Add date range filter if needed
       return matchesMonth && matchesStatus && matchesSearch && matchesAmount;
     });
   }, [invoices, selectedMonth, statusFilter, debouncedSearch, filters]);
@@ -758,7 +755,6 @@ export default function MonthlyInvoicesDashboard() {
     };
   }, [filteredInvoices]);
 
-  // Suggestion 8: Keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey) {
@@ -778,7 +774,6 @@ export default function MonthlyInvoicesDashboard() {
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [router]);
 
-  // Suggestion 4: Bulk delete
   const handleBulkDelete = async () => {
     await Promise.all(
       Array.from(selectedInvoices).map((id) =>
@@ -789,7 +784,6 @@ export default function MonthlyInvoicesDashboard() {
     toast.success(`${selectedInvoices.size} invoices deleted`);
   };
 
-  // Suggestion 4: Bulk status change
   const handleBulkStatusChange = async (newStatus: string) => {
     await Promise.all(
       Array.from(selectedInvoices).map((id) =>
@@ -800,7 +794,6 @@ export default function MonthlyInvoicesDashboard() {
     toast.success(`${selectedInvoices.size} invoices updated`);
   };
 
-  // Suggestion 5: Duplicate
   const handleDuplicate = async (invoice: Doc<"invoices">) => {
     const duplicatedInvoice = {
       ...invoice,
@@ -827,7 +820,6 @@ export default function MonthlyInvoicesDashboard() {
     }
   };
 
-  // Suggestion 12: Download with progress
   const handleDownloadInvoice = async (invoice: Doc<"invoices">) => {
     setDownloadProgress(10);
     const template = templatesByCompany[invoice.companyId]?.[0];
@@ -883,293 +875,712 @@ export default function MonthlyInvoicesDashboard() {
   const handleCreateInvoice = () => router.push("/dashboard/invoices/create");
 
   if (!user || invoices === undefined || companies === undefined) {
-    // Suggestion 2: Skeleton loading
     return (
-      <div className="max-w-7xl mx-auto p-6 space-y-8 mt-20">
-        <div className="h-8 w-1/2 skeleton rounded" />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-32 skeleton rounded-lg" />
-          ))}
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/20">
+        <div className="max-w-7xl mx-auto p-6 space-y-8 pt-24">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="space-y-6"
+          >
+            <div className="h-12 w-1/2 bg-gradient-to-r from-slate-200 to-slate-300 rounded-lg animate-pulse" />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="h-32 bg-gradient-to-br from-white to-slate-100 rounded-xl shadow-lg animate-pulse"
+                />
+              ))}
+            </div>
+            <div className="h-96 bg-gradient-to-br from-white to-slate-100 rounded-xl shadow-lg animate-pulse" />
+          </motion.div>
         </div>
-        <div className="h-96 skeleton rounded-lg" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-8 mt-20">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex justify-between items-center"
-      >
-        <div>
-          <h1 className="text-3xl font-bold">Invoice Dashboard</h1>
-          <p className="text-gray-600 mt-1">
-            Manage and track your monthly invoices
-          </p>
-        </div>
-        <Button
-          className="flex items-center gap-2"
-          onClick={handleCreateInvoice}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/20 mt-20">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8 pt-24 pb-16">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
         >
-          <Plus size={16} />
-          Create Invoice
-        </Button>
-      </motion.div>
-      {/* Filters - Enhanced with min/max amount (Suggestion 7) */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="flex flex-wrap gap-4 items-center p-4 bg-white rounded-lg border"
-      >
-        <div className="flex items-center gap-2">
-          <Calendar size={16} />
-          <span className="text-sm font-medium">Month:</span>
-          <Input
-            type="month"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="w-40"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <Filter size={16} />
-          <span className="text-sm font-medium">Status:</span>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="sent">Sent</SelectItem>
-              <SelectItem value="paid">Paid</SelectItem>
-              <SelectItem value="overdue">Overdue</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex items-center gap-2 flex-1 max-w-md">
-          <Search size={16} />
-          <Input
-            id="search-input"
-            placeholder="Search invoices..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-2">
-          <Input
-            type="number"
-            placeholder="Min Amount"
-            value={filters.minAmount}
-            onChange={(e) =>
-              setFilters({ ...filters, minAmount: Number(e.target.value) })
-            }
-            className="w-24"
-          />
-          <Input
-            type="number"
-            placeholder="Max Amount"
-            value={filters.maxAmount}
-            onChange={(e) =>
-              setFilters({ ...filters, maxAmount: Number(e.target.value) })
-            }
-            className="w-24"
-          />
-        </div>
-      </motion.div>
-      {/* Statistics Cards */}
-      {/* ... (existing stats cards, unchanged for brevity) */}
-      {/* Suggestion 11: Analytics */}
-      <InvoiceAnalytics invoices={filteredInvoices} />
-      {/* Invoices Table - With animations (Suggestion 1) */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-      >
-        <Card>
-          <CardHeader>
-            <CardTitle>Invoices ({filteredInvoices.length})</CardTitle>
-            {selectedInvoices.size > 0 && (
-              <div className="flex gap-2">
-                <Button onClick={handleBulkDelete} variant="destructive">
-                  Delete Selected
-                </Button>
-                <Select onValueChange={handleBulkStatusChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Change Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="sent">Sent</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="overdue">Overdue</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </CardHeader>
-          <CardContent>
+          <div className="relative">
             <motion.div
-              variants={tableVariants}
-              initial="hidden"
-              animate="visible"
-              className="rounded-md border"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
             >
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Select</TableHead> {/* For bulk */}
-                    <TableHead>Invoice #</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Issue Date</TableHead>
-                    <TableHead>Due Date</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredInvoices.map((invoice, index) => (
-                    <motion.tr
-                      key={invoice._id}
-                      variants={rowVariants}
-                      initial="hidden"
-                      animate="visible"
-                      whileHover="hover"
+              <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Invoice Dashboard
+              </h1>
+              <p className="text-slate-600 mt-2 text-sm sm:text-base">
+                Manage and track your monthly invoices
+              </p>
+            </motion.div>
+            <motion.div
+              className="absolute -top-6 -right-6 text-yellow-400"
+              animate={{
+                rotate: [0, 10, -10, 10, 0],
+                scale: [1, 1.1, 1, 1.1, 1],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                repeatDelay: 3,
+              }}
+            >
+              <Sparkles size={24} />
+            </motion.div>
+          </div>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Button
+              className="group relative overflow-hidden bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
+              onClick={handleCreateInvoice}
+            >
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent pointer-events-none"
+                initial={{ x: "-100%" }}
+                whileHover={{ x: "100%" }}
+                transition={{ duration: 0.5 }}
+              />
+              <Plus
+                size={16}
+                className="mr-2 group-hover:rotate-90 transition-transform duration-300"
+              />
+              Create Invoice
+            </Button>
+          </motion.div>
+        </motion.div>
+
+        {/* Filters */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.6 }}
+          whileHover={{ y: -2 }}
+          className="transition-all duration-300"
+        >
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+            <CardContent className="p-6">
+              <div className="flex flex-wrap gap-4 items-end relative">
+                <motion.div className="flex-shrink-0">
+                  <Label className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+                    <Calendar size={16} className="text-indigo-500" />
+                    Month
+                  </Label>
+                  <Input
+                    type="month"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="w-40 border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 hover:border-slate-300 transition-all duration-200"
+                  />
+                </motion.div>
+
+                <motion.div className="flex-shrink-0">
+                  <Label className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+                    <Filter size={16} className="text-purple-500" />
+                    Status
+                  </Label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-36 border-slate-200 focus:ring-2 focus:ring-purple-500/20 hover:border-purple-300 transition-all duration-200">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all" className="hover:bg-purple-50">
+                        All
+                      </SelectItem>
+                      <SelectItem value="draft" className="hover:bg-purple-50">
+                        Draft
+                      </SelectItem>
+                      <SelectItem value="sent" className="hover:bg-purple-50">
+                        Sent
+                      </SelectItem>
+                      <SelectItem value="paid" className="hover:bg-purple-50">
+                        Paid
+                      </SelectItem>
+                      <SelectItem
+                        value="overdue"
+                        className="hover:bg-purple-50"
+                      >
+                        Overdue
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </motion.div>
+
+                <motion.div className="flex-1 min-w-[200px]">
+                  <Label className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+                    <Search size={16} className="text-blue-500" />
+                    Search
+                  </Label>
+                  <Input
+                    id="search-input"
+                    placeholder="Search invoices..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 hover:border-slate-300 transition-all duration-200"
+                  />
+                </motion.div>
+
+                <motion.div className="flex-shrink-0">
+                  <Label className="text-sm font-medium text-slate-700 mb-2">
+                    Min Amount
+                  </Label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={filters.minAmount || ""}
+                    onChange={(e) =>
+                      setFilters({
+                        ...filters,
+                        minAmount: Number(e.target.value) || 0,
+                      })
+                    }
+                    className="w-28 border-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 hover:border-slate-300 transition-all duration-200"
+                  />
+                </motion.div>
+
+                <motion.div className="flex-shrink-0">
+                  <Label className="text-sm font-medium text-slate-700 mb-2">
+                    Max Amount
+                  </Label>
+                  <Input
+                    type="number"
+                    placeholder="∞"
+                    value={
+                      filters.maxAmount === Infinity ? "" : filters.maxAmount
+                    }
+                    onChange={(e) =>
+                      setFilters({
+                        ...filters,
+                        maxAmount: e.target.value
+                          ? Number(e.target.value)
+                          : Infinity,
+                      })
+                    }
+                    className="w-28 border-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 hover:border-slate-300 transition-all duration-200"
+                  />
+                </motion.div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            whileHover={{ y: -8, scale: 1.02 }}
+          >
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+              <CardContent className="p-6 relative">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                    <FileText size={24} />
+                  </div>
+                  <motion.div
+                    animate={{ rotate: [0, 5, -5, 0] }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatDelay: 3,
+                    }}
+                  >
+                    <TrendingUp size={20} className="opacity-70" />
+                  </motion.div>
+                </div>
+                <motion.h3
+                  className="text-3xl font-bold mb-1"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.3, type: "spring" }}
+                >
+                  {monthlyStats.totalInvoices}
+                </motion.h3>
+                <p className="text-blue-100 text-sm font-medium">
+                  Total Invoices
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25, duration: 0.5 }}
+            whileHover={{ y: -8, scale: 1.02 }}
+          >
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-500 to-emerald-600 text-white hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+              <CardContent className="p-6 relative">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                    <DollarSign size={24} />
+                  </div>
+                  <CheckCircle size={20} className="opacity-70" />
+                </div>
+                <motion.h3
+                  className="text-3xl font-bold mb-1"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.35, type: "spring" }}
+                >
+                  {formatCurrency(monthlyStats.totalRevenue)}
+                </motion.h3>
+                <p className="text-emerald-100 text-sm font-medium">
+                  Total Revenue
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            whileHover={{ y: -8, scale: 1.02 }}
+          >
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+              <CardContent className="p-6 relative">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                    <CheckCircle size={24} />
+                  </div>
+                  <DollarSign size={20} className="opacity-70" />
+                </div>
+                <motion.h3
+                  className="text-3xl font-bold mb-1"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.4, type: "spring" }}
+                >
+                  {formatCurrency(monthlyStats.paidRevenue)}
+                </motion.h3>
+                <p className="text-purple-100 text-sm font-medium">
+                  Paid Revenue
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35, duration: 0.5 }}
+            whileHover={{ y: -8, scale: 1.02 }}
+          >
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-rose-500 to-rose-600 text-white hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+              <CardContent className="p-6 relative">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                    <AlertCircle size={24} />
+                  </div>
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    <AlertCircle size={20} className="opacity-70" />
+                  </motion.div>
+                </div>
+                <motion.h3
+                  className="text-3xl font-bold mb-1"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.45, type: "spring" }}
+                >
+                  {formatCurrency(monthlyStats.overdueAmount)}
+                </motion.h3>
+                <p className="text-rose-100 text-sm font-medium">
+                  Overdue ({monthlyStats.overdueCount})
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* Analytics */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+        >
+          <InvoiceAnalytics invoices={filteredInvoices} />
+        </motion.div>
+
+        {/* Invoices Table */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45, duration: 0.6 }}
+          whileHover={{ y: -4 }}
+          className="transition-all duration-300"
+        >
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+            <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-indigo-50/30 relative">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <CardTitle className="text-xl font-semibold text-slate-800 flex items-center gap-2">
+                  <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full" />
+                  Invoices ({filteredInvoices.length})
+                </CardTitle>
+                <AnimatePresence>
+                  {selectedInvoices.size > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                      animate={{ opacity: 1, scale: 1, x: 0 }}
+                      exit={{ opacity: 0, scale: 0.8, x: 20 }}
+                      className="flex gap-2 flex-wrap"
                     >
-                      <TableCell>
+                      <Button
+                        onClick={handleBulkDelete}
+                        variant="destructive"
+                        size="sm"
+                        className="shadow-md hover:shadow-lg transition-all"
+                      >
+                        <Trash2 size={14} className="mr-1" />
+                        Delete ({selectedInvoices.size})
+                      </Button>
+                      <Select onValueChange={handleBulkStatusChange}>
+                        <SelectTrigger className="w-40 border-slate-200">
+                          <SelectValue placeholder="Change Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="sent">Sent</SelectItem>
+                          <SelectItem value="paid">Paid</SelectItem>
+                          <SelectItem value="overdue">Overdue</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0 relative">
+              <motion.div
+                variants={tableVariants}
+                initial="hidden"
+                animate="visible"
+                className="overflow-x-auto"
+              >
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50 hover:bg-slate-50 border-b-2 border-slate-200">
+                      <TableHead className="font-semibold text-slate-700">
                         <Input
                           type="checkbox"
-                          checked={selectedInvoices.has(invoice._id)}
-                          onChange={(e) => {
-                            const newSet = new Set(selectedInvoices);
-                            if (e.target.checked) newSet.add(invoice._id);
-                            else newSet.delete(invoice._id);
-                            setSelectedInvoices(newSet);
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {invoice.invoiceNumber}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">
-                            {invoice.customer.name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {invoice.customer.email}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {formatCurrency(invoice.total)}
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge status={invoice.status} />
-                      </TableCell>
-                      {/* Suggestion 3 */}
-                      <TableCell>
-                        {new Date(invoice.issueDate).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={
-                            invoice.status === "overdue"
-                              ? "text-red-600 font-medium"
-                              : ""
+                          checked={
+                            selectedInvoices.size === filteredInvoices.length &&
+                            filteredInvoices.length > 0
                           }
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedInvoices(
+                                new Set(filteredInvoices.map((inv) => inv._id))
+                              );
+                            } else {
+                              setSelectedInvoices(new Set());
+                            }
+                          }}
+                          className="w-4 h-4"
+                        />
+                      </TableHead>
+                      <TableHead className="font-semibold text-slate-700">
+                        Invoice #
+                      </TableHead>
+                      <TableHead className="font-semibold text-slate-700">
+                        Customer
+                      </TableHead>
+                      <TableHead className="font-semibold text-slate-700">
+                        Amount
+                      </TableHead>
+                      <TableHead className="font-semibold text-slate-700">
+                        Status
+                      </TableHead>
+                      <TableHead className="font-semibold text-slate-700">
+                        Issue Date
+                      </TableHead>
+                      <TableHead className="font-semibold text-slate-700">
+                        Due Date
+                      </TableHead>
+                      <TableHead className="font-semibold text-slate-700">
+                        Items
+                      </TableHead>
+                      <TableHead className="text-right font-semibold text-slate-700">
+                        Actions
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <AnimatePresence mode="popLayout">
+                      {filteredInvoices.map((invoice, index) => (
+                        <motion.tr
+                          key={invoice._id}
+                          variants={rowVariants}
+                          initial="hidden"
+                          animate="visible"
+                          exit={{ opacity: 0, x: -20 }}
+                          custom={index}
+                          whileHover={{
+                            backgroundColor: "rgba(99, 102, 241, 0.03)",
+                            scale: 1.005,
+                          }}
+                          className="border-b border-slate-100 transition-colors"
                         >
-                          {new Date(invoice.dueDate).toLocaleDateString()}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {invoice.items.length} item
-                        {invoice.items.length !== 1 ? "s" : ""}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleViewInvoice(invoice._id)}
-                            className="h-8 w-8"
-                          >
-                            <Eye size={14} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEditInvoice(invoice._id)}
-                            className="h-8 w-8"
-                          >
-                            <Edit size={14} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDownloadInvoice(invoice)}
-                            className="h-8 w-8"
-                          >
-                            <Download size={14} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDuplicate(invoice)}
-                            className="h-8 w-8"
-                          >
-                            <FileText size={14} />
-                          </Button>{" "}
-                          {/* Suggestion 5 */}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteInvoice(invoice._id)}
-                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 size={14} />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </motion.tr>
-                  ))}
-                </TableBody>
-              </Table>
-              {filteredInvoices.length === 0 && (
-                <div className="text-center py-12">
-                  <FileText size={48} className="mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    No invoices found
-                  </h3>
-                  <p className="text-gray-500 mb-4">
-                    {searchTerm || statusFilter !== "all"
-                      ? "Try adjusting your filters or search terms"
-                      : `No invoices for ${new Date(selectedMonth).toLocaleDateString("en-US", { month: "long", year: "numeric" })}`}
-                  </p>
-                  <Button onClick={handleCreateInvoice}>
-                    <Plus size={16} className="mr-2" />
-                    Create Your First Invoice
-                  </Button>
-                </div>
-              )}
+                          <TableCell>
+                            <motion.div whileTap={{ scale: 0.9 }}>
+                              <Input
+                                type="checkbox"
+                                checked={selectedInvoices.has(invoice._id)}
+                                onChange={(e) => {
+                                  const newSet = new Set(selectedInvoices);
+                                  if (e.target.checked) newSet.add(invoice._id);
+                                  else newSet.delete(invoice._id);
+                                  setSelectedInvoices(newSet);
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-4 h-4"
+                              />
+                            </motion.div>
+                          </TableCell>
+                          <TableCell className="font-mono font-semibold text-slate-900">
+                            {invoice.invoiceNumber}
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-0.5">
+                              <div className="font-medium text-slate-900">
+                                {invoice.customer.name}
+                              </div>
+                              <div className="text-xs text-slate-500">
+                                {invoice.customer.email}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-semibold text-slate-900 text-base">
+                              {formatCurrency(invoice.total)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge status={invoice.status} />
+                          </TableCell>
+                          <TableCell className="text-slate-600">
+                            {new Date(invoice.issueDate).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <span
+                              className={
+                                invoice.status === "overdue"
+                                  ? "text-rose-600 font-semibold"
+                                  : "text-slate-600"
+                              }
+                            >
+                              {new Date(invoice.dueDate).toLocaleDateString()}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-slate-600">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+                              {invoice.items.length} item
+                              {invoice.items.length !== 1 ? "s" : ""}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex justify-end gap-1">
+                              <motion.div
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                              >
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleViewInvoice(invoice._id)}
+                                  className="h-8 w-8 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                >
+                                  <Eye size={14} />
+                                </Button>
+                              </motion.div>
+                              <motion.div
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                              >
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEditInvoice(invoice._id)}
+                                  className="h-8 w-8 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                                >
+                                  <Edit size={14} />
+                                </Button>
+                              </motion.div>
+                              <motion.div
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                              >
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDownloadInvoice(invoice)}
+                                  className="h-8 w-8 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+                                >
+                                  <Download size={14} />
+                                </Button>
+                              </motion.div>
+                              <motion.div
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                              >
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDuplicate(invoice)}
+                                  className="h-8 w-8 hover:bg-purple-50 hover:text-purple-600 transition-colors"
+                                >
+                                  <FileText size={14} />
+                                </Button>
+                              </motion.div>
+                              <motion.div
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                              >
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() =>
+                                    handleDeleteInvoice(invoice._id)
+                                  }
+                                  className="h-8 w-8 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                                >
+                                  <Trash2 size={14} />
+                                </Button>
+                              </motion.div>
+                            </div>
+                          </TableCell>
+                        </motion.tr>
+                      ))}
+                    </AnimatePresence>
+                  </TableBody>
+                </Table>
+              </motion.div>
+
+              {/* Empty State */}
+              <AnimatePresence>
+                {filteredInvoices.length === 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="text-center py-16 px-4"
+                  >
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.2, type: "spring" }}
+                      className="inline-block p-6 bg-gradient-to-br from-slate-50 to-indigo-50 rounded-full mb-6"
+                    >
+                      <FileText size={64} className="text-slate-400" />
+                    </motion.div>
+                    <motion.h3
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                      className="text-xl font-semibold text-slate-900 mb-2"
+                    >
+                      No invoices found
+                    </motion.h3>
+                    <motion.p
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 }}
+                      className="text-slate-500 mb-6 max-w-md mx-auto"
+                    >
+                      {searchTerm || statusFilter !== "all"
+                        ? "Try adjusting your filters or search terms"
+                        : `No invoices for ${new Date(selectedMonth).toLocaleDateString("en-US", { month: "long", year: "numeric" })}`}
+                    </motion.p>
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5 }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Button
+                        onClick={handleCreateInvoice}
+                        className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all"
+                      >
+                        <Plus size={16} className="mr-2" />
+                        Create Your First Invoice
+                      </Button>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Download Progress */}
+        <AnimatePresence>
+          {downloadProgress > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 50, scale: 0.9 }}
+              className="fixed bottom-6 right-6 z-50"
+            >
+              <Card className="border-0 shadow-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white overflow-hidden">
+                <CardContent className="p-4 flex items-center gap-3 min-w-[250px]">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                  >
+                    <Download size={20} />
+                  </motion.div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium mb-1">
+                      Downloading PDF...
+                    </div>
+                    <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full bg-white rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${downloadProgress}%` }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    </div>
+                  </div>
+                  <div className="text-lg font-bold">{downloadProgress}%</div>
+                </CardContent>
+              </Card>
             </motion.div>
-          </CardContent>
-        </Card>
-      </motion.div>
-      {downloadProgress > 0 && (
-        <div className="fixed bottom-4 right-4 bg-blue-500 text-white p-2 rounded">
-          Downloading: {downloadProgress}%
-        </div>
-      )}
-      {/* Progress UI */}
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
