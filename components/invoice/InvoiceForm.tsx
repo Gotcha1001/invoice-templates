@@ -748,9 +748,11 @@ export default function InvoiceCreationForm({
 
   useEffect(() => {
     if (companies && companies.length > 0) {
-      let initialCompany;
+      let initialCompany: Doc<"companies"> | undefined;
       if (defaultCompanyId) {
-        initialCompany = companies.find((c) => c._id === defaultCompanyId);
+        initialCompany = companies.find(
+          (c: Doc<"companies">) => c._id === defaultCompanyId
+        );
       } else if (!watchedValues.company.name) {
         initialCompany = companies[0];
       }
@@ -785,11 +787,14 @@ export default function InvoiceCreationForm({
   useEffect(() => {
     if (templates && watchedValues.invoiceDetails.templateId) {
       const currentId = watchedValues.invoiceDetails.templateId;
-      if (!templates.find((t) => t._id === currentId)) {
+      if (!templates.find((t: Doc<"templates">) => t._id === currentId)) {
         setValue(
           "invoiceDetails.templateId",
           templates.length > 0
-            ? (templates.find((t) => t.isDefault) || templates[0])._id
+            ? (
+                templates.find((t: Doc<"templates">) => t.isDefault) ||
+                templates[0]
+              )._id
             : ("" as Id<"templates">)
         );
       }
@@ -1010,24 +1015,92 @@ export default function InvoiceCreationForm({
 
   return (
     <div className="relative">
-      {/* Close Button */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="absolute top-4 right-4 z-10"
-      >
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          className="hover:bg-rose-50 hover:text-rose-600"
-        >
-          <X size={20} />
-        </Button>
-      </motion.div>
-
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        {/* Rest of the form code remains the same */}
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8"
+        >
+          <div className="relative">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+            >
+              <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Create Invoice
+              </h1>
+              <p className="text-slate-500 mt-2 text-sm sm:text-base">
+                Build professional invoices in seconds
+              </p>
+            </motion.div>
+            <motion.div
+              className="absolute -top-6 -right-6 text-yellow-400"
+              animate={{
+                rotate: [0, 10, -10, 10, 0],
+                scale: [1, 1.1, 1, 1.1, 1],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                repeatDelay: 3,
+              }}
+            >
+              <Sparkles size={24} />
+            </motion.div>
+          </div>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="flex gap-3"
+          >
+            <Button
+              type="button"
+              variant="outline"
+              className="group relative overflow-hidden border-2 border-slate-200 hover:border-indigo-300 transition-all duration-300 shadow-sm hover:shadow-md"
+              onClick={() => setShowPreview(!showPreview)}
+            >
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10"
+                initial={{ x: "-100%" }}
+                whileHover={{ x: "100%" }}
+                transition={{ duration: 0.5 }}
+              />
+              <Eye
+                size={16}
+                className="mr-2 group-hover:scale-110 transition-transform"
+              />
+              {showPreview ? "Hide Preview" : "Show Preview"}
+            </Button>
+            <Button
+              type="submit"
+              className="group relative overflow-hidden bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent"
+                initial={{ x: "-100%" }}
+                whileHover={{ x: "100%" }}
+                transition={{ duration: 0.5 }}
+              />
+              <Save
+                size={16}
+                className="mr-2 group-hover:scale-110 transition-transform"
+              />
+              Save Invoice
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="hover:bg-rose-50 hover:text-rose-600"
+            >
+              <X size={20} />
+            </Button>
+          </motion.div>
+        </motion.div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Company Information */}
           <motion.div
@@ -1050,6 +1123,46 @@ export default function InvoiceCreationForm({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-5 pt-6 relative">
+                <motion.div whileTap={{ scale: 0.98 }}>
+                  <Label className="mb-2 text-sm font-medium text-slate-700">
+                    Company
+                  </Label>
+                  <Select
+                    value={watchedValues.company.name}
+                    onValueChange={(value) => {
+                      const selectedCompany = companies?.find(
+                        (c: Doc<"companies">) => c.name === value
+                      );
+                      if (selectedCompany) {
+                        setValue("company", {
+                          name: selectedCompany.name,
+                          address: selectedCompany.address,
+                          phone: selectedCompany.phone,
+                          email: selectedCompany.email,
+                          website: selectedCompany.website || "",
+                          logoUrl: selectedCompany.logoUrl || "",
+                          bankingDetails: selectedCompany.bankingDetails,
+                        });
+                        setLogoPreview(selectedCompany.logoUrl || "");
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="border-slate-200 focus:ring-2 focus:ring-indigo-500/20 hover:border-indigo-300 transition-all duration-200">
+                      <SelectValue placeholder="Select a company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies?.map((c: Doc<"companies">) => (
+                        <SelectItem
+                          key={c._id}
+                          value={c.name}
+                          className="hover:bg-indigo-50 transition-colors"
+                        >
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </motion.div>
                 <div>
                   <Label className="mb-2 text-sm font-medium text-slate-700">
                     Company Logo
@@ -1544,7 +1657,8 @@ export default function InvoiceCreationForm({
                           <Input
                             value={formatCurrency(
                               watchedValues.items[index]?.quantity *
-                                watchedValues.items[index]?.price || 0
+                                watchedValues.items[index]?.price || 0,
+                              watchedValues.invoiceDetails.currency
                             )}
                             readOnly
                             className="bg-gradient-to-br from-slate-50 to-emerald-50/30 border-slate-200 font-semibold text-slate-700"
@@ -1590,7 +1704,10 @@ export default function InvoiceCreationForm({
                     >
                       <span className="font-medium">Subtotal:</span>
                       <span className="font-semibold">
-                        {formatCurrency(subtotal)}
+                        {formatCurrency(
+                          subtotal,
+                          watchedValues.invoiceDetails.currency
+                        )}
                       </span>
                     </motion.div>
                     <motion.div
@@ -1602,7 +1719,10 @@ export default function InvoiceCreationForm({
                         Tax ({watchedValues.invoiceDetails.tax}%):
                       </span>
                       <span className="font-semibold">
-                        {formatCurrency(taxAmount)}
+                        {formatCurrency(
+                          taxAmount,
+                          watchedValues.invoiceDetails.currency
+                        )}
                       </span>
                     </motion.div>
                     <div className="h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
@@ -1612,7 +1732,12 @@ export default function InvoiceCreationForm({
                       transition={{ duration: 0.2 }}
                     >
                       <span>Total:</span>
-                      <span>{formatCurrency(total)}</span>
+                      <span>
+                        {formatCurrency(
+                          total,
+                          watchedValues.invoiceDetails.currency
+                        )}
+                      </span>
                     </motion.div>
                   </div>
                 </motion.div>
