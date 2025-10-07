@@ -189,3 +189,59 @@ export const updateInvoice = mutation({
     await ctx.db.patch(id, updates);
   },
 });
+
+// New query for stats
+export const getStatsByCompany = query({
+  args: { companyId: v.id("companies") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const company = await ctx.db.get(args.companyId);
+    if (!company || company.userId !== identity.subject) {
+      throw new Error("Unauthorized");
+    }
+
+    const invoices = await ctx.db
+      .query("invoices")
+      .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
+      .collect();
+
+    const statusCounts = invoices.reduce(
+      (acc, inv) => {
+        acc[inv.status] = (acc[inv.status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<"draft" | "sent" | "paid" | "overdue", number>
+    );
+
+    const monthlyRevenue = invoices.reduce(
+      (acc, inv) => {
+        const date = new Date(inv.issueDate);
+        const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, "0")}`;
+        acc[monthKey] = (acc[monthKey] || 0) + inv.total;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+
+    const totalRevenue = invoices.reduce((sum, inv) => sum + inv.total, 0);
+    const paidRevenue = invoices
+      .filter((inv) => inv.status === "paid")
+      .reduce((sum, inv) => sum + inv.total, 0);
+    const overdueAmount = invoices
+      .filter((inv) => inv.status === "overdue")
+      .reduce((sum, inv) => sum + inv.total, 0);
+    const overdueCount = statusCounts.overdue || 0;
+
+    return {
+      statusCounts,
+      monthlyRevenue,
+      totalRevenue,
+      paidRevenue,
+      overdueAmount,
+      overdueCount,
+      totalInvoices: invoices.length,
+    };
+  },
+});
