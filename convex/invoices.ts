@@ -162,6 +162,8 @@ export const updateInvoice = mutation({
     issueDate: v.optional(v.string()),
     dueDate: v.optional(v.string()),
     notes: v.optional(v.string()),
+    templateId: v.optional(v.id("templates")),
+    currency: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -176,6 +178,14 @@ export const updateInvoice = mutation({
     }
 
     const { id, ...updates } = args;
+
+    if (updates.templateId) {
+      const template = await ctx.db.get(updates.templateId);
+      if (!template || template.companyId !== invoice.companyId) {
+        throw new Error("Invalid template");
+      }
+    }
+
     await ctx.db.patch(id, updates);
   },
 });
