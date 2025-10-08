@@ -112,6 +112,12 @@ export default function Navbar() {
               Statistics
             </Link>
             <Link
+              href="/dashboard/accounting"
+              className="hover:text-secondary transition-colors"
+            >
+              Accounting
+            </Link>
+            <Link
               href="/dashboard/settings"
               className="hover:text-secondary transition-colors"
             >
@@ -209,6 +215,13 @@ export default function Navbar() {
                   onClick={toggleMobileMenu}
                 >
                   Statistics
+                </Link>
+                <Link
+                  href="/dashboard/accounting"
+                  className="hover:text-secondary"
+                  onClick={toggleMobileMenu}
+                >
+                  Accounting
                 </Link>
                 <Link
                   href="/dashboard/settings"
