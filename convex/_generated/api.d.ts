@@ -15,6 +15,7 @@ import type {
 } from "convex/server";
 import type * as companies from "../companies.js";
 import type * as invoices from "../invoices.js";
+import type * as ledger from "../ledger.js";
 import type * as templates from "../templates.js";
 import type * as users from "../users.js";
 
@@ -29,6 +30,7 @@ import type * as users from "../users.js";
 declare const fullApi: ApiFromModules<{
   companies: typeof companies;
   invoices: typeof invoices;
+  ledger: typeof ledger;
   templates: typeof templates;
   users: typeof users;
 }>;

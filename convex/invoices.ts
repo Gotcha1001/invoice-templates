@@ -125,6 +125,96 @@ export const deleteInvoice = mutation({
   },
 });
 
+// export const updateInvoice = mutation({
+//   args: {
+//     id: v.id("invoices"),
+//     invoiceNumber: v.optional(v.string()),
+//     customer: v.optional(
+//       v.object({
+//         name: v.string(),
+//         email: v.string(),
+//         address: v.string(),
+//         phone: v.optional(v.string()),
+//       })
+//     ),
+//     items: v.optional(
+//       v.array(
+//         v.object({
+//           id: v.string(),
+//           description: v.string(),
+//           quantity: v.number(),
+//           price: v.number(),
+//           total: v.number(),
+//         })
+//       )
+//     ),
+//     subtotal: v.optional(v.number()),
+//     tax: v.optional(v.number()),
+//     total: v.optional(v.number()),
+//     status: v.optional(
+//       v.union(
+//         v.literal("draft"),
+//         v.literal("sent"),
+//         v.literal("paid"),
+//         v.literal("overdue")
+//       )
+//     ),
+//     issueDate: v.optional(v.string()),
+//     dueDate: v.optional(v.string()),
+//     notes: v.optional(v.string()),
+//     templateId: v.optional(v.id("templates")),
+//     currency: v.optional(v.string()),
+//   },
+//   handler: async (ctx, args) => {
+//     const identity = await ctx.auth.getUserIdentity();
+//     if (!identity) throw new Error("Not authenticated");
+
+//     const invoice = await ctx.db.get(args.id);
+//     if (!invoice) throw new Error("Invoice not found");
+
+//     const company = await ctx.db.get(invoice.companyId);
+//     if (!company || company.userId !== identity.subject) {
+//       throw new Error("Unauthorized");
+//     }
+
+//     const { id, ...updates } = args;
+
+//     if (updates.templateId) {
+//       const template = await ctx.db.get(updates.templateId);
+//       if (!template || template.companyId !== invoice.companyId) {
+//         throw new Error("Invalid template");
+//       }
+//     }
+
+//     await ctx.db.patch(id, updates);
+
+//     // Auto-add ledger entry if status changed to "paid"
+//     if (updates.status === "paid" && invoice.status !== "paid") {
+//       await ctx.db.insert("ledgerEntries", {
+//         companyId: invoice.companyId,
+//         account: "Accounts Receivable",
+//         debit: invoice.total, // Debit A/R (example; adjust logic as needed)
+//         credit: 0,
+//         date: new Date().toISOString(),
+//         description: `Payment received for Invoice #${invoice.invoiceNumber}`,
+//       });
+//       await ctx.db.insert("ledgerEntries", {
+//         companyId: invoice.companyId,
+//         account: "Revenue",
+//         debit: 0,
+//         credit: invoice.total, // Credit Revenue
+//         date: new Date().toISOString(),
+//         description: `Revenue from Invoice #${invoice.invoiceNumber}`,
+//       });
+//     }
+//   },
+// });
+
+// New query for stats
+
+// In convex/invoices.ts
+// Update the updateInvoice mutation:
+
 export const updateInvoice = mutation({
   args: {
     id: v.id("invoices"),
@@ -164,6 +254,7 @@ export const updateInvoice = mutation({
     notes: v.optional(v.string()),
     templateId: v.optional(v.id("templates")),
     currency: v.optional(v.string()),
+    paidDate: v.optional(v.string()), // ✅ ADD THIS
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -179,6 +270,11 @@ export const updateInvoice = mutation({
 
     const { id, ...updates } = args;
 
+    // ✅ Auto-set paidDate when status changes to "paid"
+    if (updates.status === "paid" && invoice.status !== "paid") {
+      updates.paidDate = new Date().toISOString().split("T")[0];
+    }
+
     if (updates.templateId) {
       const template = await ctx.db.get(updates.templateId);
       if (!template || template.companyId !== invoice.companyId) {
@@ -190,7 +286,6 @@ export const updateInvoice = mutation({
   },
 });
 
-// New query for stats
 export const getStatsByCompany = query({
   args: { companyId: v.id("companies") },
   handler: async (ctx, args) => {

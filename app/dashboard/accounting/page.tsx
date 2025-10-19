@@ -1387,6 +1387,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { formatCurrency } from "@/lib/currency";
 import { api } from "@/convex/_generated/api";
+import Link from "next/link";
 
 const COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981"];
 
@@ -2132,6 +2133,53 @@ export default function AccountingPage() {
             </motion.div>
           </div>
         )}
+
+        {/* Navigation to other components */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7, duration: 0.6 }}
+        >
+          <h2 className="text-3xl font-bold mt-12 mb-6">Accounting Tools</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="border-0 shadow-2xl bg-gradient-to-br from-white/95 to-white/90 backdrop-blur-xl hover:shadow-3xl transition-all duration-500">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-2xl">
+                  <FileText className="text-indigo-600" size={28} />
+                  General Ledger
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-slate-600 mb-4 text-lg">
+                  View and manage ledger entries for your accounts.
+                </p>
+                <Link href="/dashboard/accounting/general-ledger">
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl">
+                    Open General Ledger
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+            <Card className="border-0 shadow-2xl bg-gradient-to-br from-white/95 to-white/90 backdrop-blur-xl hover:shadow-3xl transition-all duration-500">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-2xl">
+                  <BarChart3 className="text-purple-600" size={28} />
+                  Trial Balance
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-slate-600 mb-4 text-lg">
+                  Overview of debits and credits per account.
+                </p>
+                <Link href="/dashboard/accounting/trial-balance">
+                  <Button className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl">
+                    Open Trial Balance
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

@@ -2,6 +2,19 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  // schema.ts
+  // Update convex/schema.ts to include invoiceId in ledgerEntries
+  // In convex/schema.ts, update the ledgerEntries table
+  ledgerEntries: defineTable({
+    companyId: v.id("companies"),
+    account: v.string(), // e.g., "Assets", "Liabilities"
+    debit: v.number(),
+    credit: v.number(),
+    date: v.string(),
+    description: v.optional(v.string()), // Change to optional
+    invoiceId: v.optional(v.id("invoices")),
+  }).index("by_company", ["companyId"]),
+
   users: defineTable({
     clerkId: v.string(), // Clerk user ID
     email: v.string(),
@@ -80,6 +93,7 @@ export default defineSchema({
     total: v.number(),
     dueDate: v.string(),
     issueDate: v.string(),
+    paidDate: v.optional(v.string()),
     status: v.union(
       v.literal("draft"),
       v.literal("sent"),
