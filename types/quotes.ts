@@ -22,7 +22,9 @@ export const quoteSchema = z.object({
     )
     .min(1, "At least one item is required"),
   subtotal: z.number().nonnegative(),
-  tax: z.number().nonnegative(),
+  tax: z.number().nonnegative().optional(),
+  taxRate: z.number().min(0).max(1).optional(),
+  isVatRegistered: z.boolean(),
   total: z.number().nonnegative(),
   issueDate: z
     .string()

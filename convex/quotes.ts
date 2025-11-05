@@ -65,7 +65,7 @@ export const createQuote = mutation({
       })
     ),
     subtotal: v.number(),
-    tax: v.number(),
+    tax: v.float64(),
     total: v.number(),
     status: v.union(
       v.literal("draft"),
@@ -83,6 +83,9 @@ export const createQuote = mutation({
     discountType: v.optional(
       v.union(v.literal("percentage"), v.literal("fixed"))
     ),
+    // ADD THESE
+    isVatRegistered: v.boolean(),
+    taxRate: v.optional(v.float64()), // e.g. 0.15 for 15%
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -100,6 +103,7 @@ export const createQuote = mutation({
 
     const quoteId = await ctx.db.insert("quotes", {
       ...args,
+      tax: args.tax,
     });
 
     return quoteId;
@@ -110,6 +114,8 @@ export const updateQuote = mutation({
   args: {
     id: v.id("quotes"),
     quoteNumber: v.optional(v.string()),
+    isVatRegistered: v.optional(v.boolean()),
+    taxRate: v.optional(v.float64()),
     customer: v.optional(
       v.object({
         name: v.string(),

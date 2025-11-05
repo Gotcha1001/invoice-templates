@@ -953,6 +953,10 @@ export default function QuotesDashboard() {
   /* ---------- modal state ---------- */
   const [open, setOpen] = useState(false);
 
+  // VAT state (separate from form)
+  const [isVatRegistered, setIsVatRegistered] = useState(true);
+  const [taxRate, setTaxRate] = useState(0.15); // 15%
+
   const defaultForm: QuoteFormData = {
     quoteNumber: `QUO-${Date.now()}`,
     companyId: "" as Id<"companies">,
@@ -1014,17 +1018,23 @@ export default function QuotesDashboard() {
       items: p.items.map((i) => (i.id === id ? { ...i, [field]: value } : i)),
     }));
 
+  /* ---------- TOTALS (VAT-aware) ---------- */
   const totals = useMemo(() => {
-    const subtotal = form.items.reduce((s, i) => s + i.quantity * i.price, 0);
+    const lineTotal = form.items.reduce((s, i) => s + i.quantity * i.price, 0);
     const discount =
       form.discountType === "percentage"
-        ? (subtotal * form.discount) / 100
+        ? (lineTotal * form.discount) / 100
         : form.discount;
-    const after = subtotal - discount;
-    const tax = after * 0.15; // 15% VAT
-    return { subtotal, discount, after, tax, total: after + tax };
-  }, [form.items, form.discount, form.discountType]);
 
+    const subtotal = lineTotal;
+    const afterDiscount = subtotal - discount;
+    const tax = isVatRegistered ? afterDiscount * taxRate : 0;
+    const total = afterDiscount + tax;
+
+    return { subtotal, discount, afterDiscount, tax, total };
+  }, [form.items, form.discount, form.discountType, isVatRegistered, taxRate]);
+
+  /* ---------- submit ---------- */
   const submit = async () => {
     if (
       !form.customer.name ||
@@ -1037,11 +1047,27 @@ export default function QuotesDashboard() {
 
     try {
       await createQuote({
-        ...form,
+        quoteNumber: form.quoteNumber,
+        companyId: form.companyId,
+        templateId: form.templateId,
+        customer: form.customer,
         items: form.items.map((i) => ({
-          ...i,
+          id: i.id,
+          description: i.description,
+          quantity: i.quantity,
+          price: i.price,
           total: i.quantity * i.price,
         })),
+        issueDate: form.issueDate,
+        validUntil: form.validUntil,
+        currency: form.currency,
+        notes: form.notes,
+        discount: form.discount,
+        discountType: form.discountType,
+        // VAT fields
+        isVatRegistered,
+        taxRate: isVatRegistered ? taxRate : undefined,
+        // Totals
         subtotal: totals.subtotal,
         tax: totals.tax,
         total: totals.total,
@@ -1051,7 +1077,10 @@ export default function QuotesDashboard() {
       toast.success("Quote created");
       setOpen(false);
       setForm(defaultForm);
-    } catch {
+      setIsVatRegistered(true);
+      setTaxRate(0.15);
+    } catch (e) {
+      console.error(e);
       toast.error("Failed to create quote");
     }
   };
@@ -1091,9 +1120,7 @@ export default function QuotesDashboard() {
                 <Input
                   placeholder="Quote # or customer"
                   value={search}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    setSearch(e.target.value)
-                  }
+                  onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
 
@@ -1128,7 +1155,7 @@ export default function QuotesDashboard() {
                   <Label>Company</Label>
                   <Select
                     value={companyFilter ?? "all"}
-                    onValueChange={(v: string) =>
+                    onValueChange={(v) =>
                       setCompanyFilter(
                         v === "all" ? null : (v as Id<"companies">)
                       )
@@ -1270,7 +1297,6 @@ export default function QuotesDashboard() {
         </Card>
 
         {/* ---------- CREATE MODAL ---------- */}
-        {/* ---------- CREATE MODAL ---------- */}
         <AnimatePresence>
           {open && (
             <motion.div
@@ -1332,9 +1358,6 @@ export default function QuotesDashboard() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <p className="text-xs text-slate-500 mt-1">
-                          The company that issues the quote
-                        </p>
                       </div>
 
                       <div>
@@ -1361,9 +1384,6 @@ export default function QuotesDashboard() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Layout, colors & logo position
-                        </p>
                       </div>
                     </div>
                   </section>
@@ -1379,7 +1399,7 @@ export default function QuotesDashboard() {
                         <Input
                           placeholder="e.g. Jane Doe"
                           value={form.customer.name}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          onChange={(e) =>
                             setForm((p) => ({
                               ...p,
                               customer: { ...p.customer, name: e.target.value },
@@ -1397,7 +1417,7 @@ export default function QuotesDashboard() {
                           type="email"
                           placeholder="jane@example.com"
                           value={form.customer.email}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          onChange={(e) =>
                             setForm((p) => ({
                               ...p,
                               customer: {
@@ -1417,7 +1437,7 @@ export default function QuotesDashboard() {
                         <Input
                           placeholder="123 Main St, Cape Town"
                           value={form.customer.address}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          onChange={(e) =>
                             setForm((p) => ({
                               ...p,
                               customer: {
@@ -1437,7 +1457,7 @@ export default function QuotesDashboard() {
                         <Input
                           placeholder="+27 82 123 4567"
                           value={form.customer.phone}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          onChange={(e) =>
                             setForm((p) => ({
                               ...p,
                               customer: {
@@ -1472,9 +1492,7 @@ export default function QuotesDashboard() {
                           <Input
                             placeholder="e.g. Website design (40 hrs)"
                             value={it.description}
-                            onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
-                            ) =>
+                            onChange={(e) =>
                               updateItem(it.id, "description", e.target.value)
                             }
                           />
@@ -1486,9 +1504,7 @@ export default function QuotesDashboard() {
                             min={1}
                             placeholder="Qty"
                             value={it.quantity}
-                            onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
-                            ) =>
+                            onChange={(e) =>
                               updateItem(
                                 it.id,
                                 "quantity",
@@ -1505,9 +1521,7 @@ export default function QuotesDashboard() {
                             step={0.01}
                             placeholder="Price"
                             value={it.price}
-                            onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
-                            ) =>
+                            onChange={(e) =>
                               updateItem(it.id, "price", Number(e.target.value))
                             }
                           />
@@ -1546,7 +1560,7 @@ export default function QuotesDashboard() {
                           min={0}
                           placeholder="0"
                           value={form.discount}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          onChange={(e) =>
                             setForm((p) => ({
                               ...p,
                               discount: Number(e.target.value),
@@ -1578,6 +1592,40 @@ export default function QuotesDashboard() {
                     </div>
                   </section>
 
+                  {/* ==== VAT SETTINGS ==== */}
+                  <section className="space-y-4">
+                    <h3 className="flex items-center gap-2 text-lg font-semibold text-indigo-700">
+                      VAT Settings
+                    </h3>
+
+                    <Label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isVatRegistered}
+                        onChange={(e) => setIsVatRegistered(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      Company is VAT-registered
+                    </Label>
+
+                    {isVatRegistered && (
+                      <div className="max-w-xs">
+                        <Label>VAT rate (%)</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          step={0.1}
+                          value={(taxRate * 100).toFixed(1)}
+                          onChange={(e) =>
+                            setTaxRate(Number(e.target.value) / 100)
+                          }
+                          className="mt-1"
+                        />
+                      </div>
+                    )}
+                  </section>
+
                   {/* ==== TOTALS ==== */}
                   <section className="flex justify-end">
                     <div className="w-full max-w-md p-5 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl shadow-inner space-y-2">
@@ -1601,12 +1649,14 @@ export default function QuotesDashboard() {
                         </div>
                       )}
 
-                      <div className="flex justify-between text-sm">
-                        <span>VAT (15%)</span>
-                        <span className="font-medium">
-                          {formatCurrency(totals.tax)}
-                        </span>
-                      </div>
+                      {isVatRegistered && totals.tax > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span>VAT ({(taxRate * 100).toFixed(1)}%)</span>
+                          <span className="font-medium">
+                            {formatCurrency(totals.tax)}
+                          </span>
+                        </div>
+                      )}
 
                       <div className="flex justify-between pt-2 border-t border-indigo-200 font-bold text-lg">
                         <span>Total</span>
@@ -1626,7 +1676,7 @@ export default function QuotesDashboard() {
                       rows={3}
                       placeholder="Payment terms, delivery timeline, special conditions..."
                       value={form.notes}
-                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                      onChange={(e) =>
                         setForm((p) => ({ ...p, notes: e.target.value }))
                       }
                       className="mt-1"

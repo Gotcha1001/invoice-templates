@@ -126,7 +126,9 @@ export default defineSchema({
       })
     ),
     subtotal: v.number(),
-    tax: v.number(),
+    tax: v.float64(), // ← now optional
+    taxRate: v.optional(v.float64()), // ← store the rate (0-1) the user chose
+    isVatRegistered: v.boolean(),
     total: v.number(),
     validUntil: v.string(),
     issueDate: v.string(),
