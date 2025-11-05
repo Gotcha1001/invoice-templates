@@ -100,6 +100,12 @@ export default function Navbar() {
               Invoices
             </Link>
             <Link
+              href="/dashboard/quotes"
+              className="hover:text-secondary transition-colors"
+            >
+              Quotes
+            </Link>
+            <Link
               href="/dashboard/templates"
               className="hover:text-secondary transition-colors"
             >
@@ -201,6 +207,13 @@ export default function Navbar() {
                   onClick={toggleMobileMenu}
                 >
                   Invoices
+                </Link>
+                <Link
+                  href="/dashboard/quotes"
+                  className="hover:text-secondary"
+                  onClick={toggleMobileMenu}
+                >
+                  Quotes
                 </Link>
                 <Link
                   href="/dashboard/templates"

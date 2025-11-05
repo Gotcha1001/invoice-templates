@@ -1,10 +1,9 @@
+// convex/schema.ts
+// Corrected to include quotes inside the defineSchema object
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
-  // schema.ts
-  // Update convex/schema.ts to include invoiceId in ledgerEntries
-  // In convex/schema.ts, update the ledgerEntries table
   ledgerEntries: defineTable({
     companyId: v.id("companies"),
     account: v.string(), // e.g., "Assets", "Liabilities"
@@ -103,6 +102,50 @@ export default defineSchema({
     templateId: v.id("templates"),
     notes: v.optional(v.string()),
     currency: v.string(), // Added currency field
+  })
+    .index("by_company", ["companyId"])
+    .index("by_status", ["status"])
+    .index("by_date", ["issueDate"]),
+
+  quotes: defineTable({
+    quoteNumber: v.string(),
+    companyId: v.id("companies"),
+    customer: v.object({
+      name: v.string(),
+      email: v.string(),
+      address: v.string(),
+      phone: v.optional(v.string()),
+    }),
+    items: v.array(
+      v.object({
+        id: v.string(),
+        description: v.string(),
+        quantity: v.number(),
+        price: v.number(),
+        total: v.number(),
+      })
+    ),
+    subtotal: v.number(),
+    tax: v.number(),
+    total: v.number(),
+    validUntil: v.string(),
+    issueDate: v.string(),
+    status: v.union(
+      v.literal("draft"),
+      v.literal("sent"),
+      v.literal("accepted"),
+      v.literal("rejected"),
+      v.literal("expired"),
+      v.literal("converted") // When converted to invoice
+    ),
+    templateId: v.id("templates"),
+    notes: v.optional(v.string()),
+    currency: v.string(),
+    discount: v.optional(v.number()), // For bulk discounts
+    discountType: v.optional(
+      v.union(v.literal("percentage"), v.literal("fixed"))
+    ),
+    convertedInvoiceId: v.optional(v.id("invoices")),
   })
     .index("by_company", ["companyId"])
     .index("by_status", ["status"])
